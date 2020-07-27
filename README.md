@@ -21,3 +21,6 @@ i.e: MultiDoF-superbuild/robots/centauro-simulator/centauro_gazebo/urdf/centauro
 3) rosservice call /gazebo_tfix_pub/gazebo/pub_tf_link "link_name: 'SPECIFI_LINK'" or insert 'all'.
 4) Check the result on rviz for instance.
       
+It's possible to reset the link name using:
+
+rosservice call /gazebo_tfix_pub/gazebo/clear_tf_link "{}"
