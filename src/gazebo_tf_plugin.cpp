@@ -20,7 +20,7 @@
 
 using namespace std;
 
-static string link_requested;
+static string link_requested,world_link;
 
 namespace gazebo
 {
@@ -42,6 +42,7 @@ namespace gazebo
         this->model = _model;
         
         link_requested="";
+        world_link="";
 
         this->tf_prefix="gazebo/"; 
         
@@ -66,8 +67,12 @@ namespace gazebo
         // the Gazebo node
         this->rosNode.reset(new ros::NodeHandle("gazebo_tfix_pub"));
 
-        this->service_set_link      = this->rosNode->advertiseService("gazebo/pub_tf_link", pub_tf_link);
-        this->service_clear_link    = this->rosNode->advertiseService("gazebo/clear_tf_link", clear_tf_link);
+        this->service_set_link       = this->rosNode->advertiseService("gazebo/pub_tf_link", pub_tf_link);
+        this->service_clear_link     = this->rosNode->advertiseService("gazebo/clear_tf_link", clear_tf_link);
+        
+        this->service_set_world      = this->rosNode->advertiseService("gazebo/pub_tf_world", pub_tf_world);
+        this->service_clear_world    = this->rosNode->advertiseService("gazebo/clear_tf_world", clear_tf_world);
+        
 
         this->updateConnection = event::Events::ConnectWorldUpdateBegin(boost::bind(&GazeboTFPlugin::TF_BroadCast, this,_1));
         
@@ -76,12 +81,27 @@ namespace gazebo
      public: void TF_BroadCast(const common::UpdateInfo& _info){
        
             static tf::TransformBroadcaster br;
-            tf::Transform transform_actual,trasform_parent;
-            ignition::math::Pose3d pose,pose_parent;
+            tf::Transform transform_actual,trasform_parent,transform_world;
+            ignition::math::Pose3d pose,pose_parent,pose_world;
             tf::Quaternion q;
             string past_link_requested;
             bool stop_research=false;
             
+            if(world_link!="")
+            {
+                pose_world= model->WorldPose();
+                transform_world.setOrigin( tf::Vector3(pose_world.Pos().X(),pose_world.Pos().Y(),pose_world.Pos().Z()) );
+
+                q.setW(pose_world.Rot().W());
+                q.setX(pose_world.Rot().X());
+                q.setY(pose_world.Rot().Y());
+                q.setZ(pose_world.Rot().Z());
+        
+                transform_world.setRotation(q);
+                                
+                br.sendTransform(tf::StampedTransform(transform_world, ros::Time::now(),"gazebo/world",world_link));
+            }
+                  
             if(link_requested!="")
             {
                 past_link_requested=link_requested;
@@ -154,6 +174,17 @@ namespace gazebo
     public: static bool clear_tf_link(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res) {
 
     link_requested="";
+    return true;
+    }
+    
+    public: static bool pub_tf_world(gazebo_tf_pub::LinkRequested::Request  &req, gazebo_tf_pub::LinkRequested::Response& res) {
+
+    world_link=req.link_name;
+    return true;
+    }
+    public: static bool clear_tf_world(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res) {
+
+    world_link="";
     return true;
     }
     
