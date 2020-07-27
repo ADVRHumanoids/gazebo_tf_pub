@@ -24,3 +24,11 @@ i.e: MultiDoF-superbuild/robots/centauro-simulator/centauro_gazebo/urdf/centauro
 It's possible to reset the link name using:
 
 rosservice call /gazebo_tfix_pub/gazebo/clear_tf_link "{}"
+
+Moreover: It's possible to use this plugin to print the overall model tf to a specific link. It simulates the odometry into gazebo.
+
+rosservice call /gazebo_tfix_pub/gazebo/pub_tf_world "link_name: 'world'"
+
+To clear:
+
+rosservice call /gazebo_tfix_pub/gazebo/clear_tf_world "{}"
